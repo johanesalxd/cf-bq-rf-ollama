@@ -5,7 +5,7 @@ import (
 	"os"
 
 	"github.com/GoogleCloudPlatform/functions-framework-go/funcframework"
-	_ "github.com/johanesalxd/cf-bq-rf-ollama"
+	bqrfollama "github.com/johanesalxd/cf-bq-rf-ollama"
 )
 
 // main starts the function framework server on the specified port
@@ -15,6 +15,7 @@ func main() {
 		port = envPort
 	}
 
+	funcframework.RegisterHTTPFunction("/", bqrfollama.BQRFOllama)
 	if err := funcframework.Start(port); err != nil {
 		log.Fatalf("funcframework.Start: %v\n", err)
 	}
