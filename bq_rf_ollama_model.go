@@ -1,12 +1,14 @@
 package bqrfollama
 
 import (
-	"time"
+	"encoding/json"
 )
 
 type PromptRequest struct {
 	PromptInput string `json:"promptInput"`
 	Model       string `json:"model"`
+	//TODO: implement ModelConfig
+	PromptOutput json.RawMessage `json:"promptOutput"`
 }
 
 type OllamaRequest struct {
@@ -18,15 +20,10 @@ type OllamaRequest struct {
 	Options map[string]interface{} `json:"options,omitempty"`
 }
 
-type OllamaResponse struct {
-	Model              string        `json:"model"`
-	CreatedAt          time.Time     `json:"created_at"`
-	Response           string        `json:"response"`
-	Done               bool          `json:"done"`
-	TotalDuration      time.Duration `json:"total_duration"`
-	LoadDuration       time.Duration `json:"load_duration"`
-	PromptEvalCount    int           `json:"prompt_eval_count"`
-	PromptEvalDuration time.Duration `json:"prompt_eval_duration"`
-	EvalCount          int           `json:"eval_count"`
-	EvalDuration       time.Duration `json:"eval_duration"`
+func newPromptRequest() PromptRequest {
+	return PromptRequest{
+		PromptInput:  "",
+		Model:        "",
+		PromptOutput: json.RawMessage(""),
+	}
 }

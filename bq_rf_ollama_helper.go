@@ -19,7 +19,9 @@ func textsToTexts(ctx context.Context, bqReq *BigQueryRequest) *BigQueryResponse
 		select {
 		case <-ctx.Done():
 			log.Printf("Context cancelled before starting goroutine #%d", i)
-			texts[i] = string(GenerateJSONResponse(json.RawMessage(`{"error":"Request cancelled"}`)))
+			texts[i] = string(GenerateJSONResponse(&PromptRequest{
+				PromptOutput: json.RawMessage(`{"error":"Request cancelled"}`),
+			}))
 
 			continue
 		default:
@@ -38,30 +40,21 @@ func textsToTexts(ctx context.Context, bqReq *BigQueryRequest) *BigQueryResponse
 
 				// Check if call has 2 elements
 				if len(call) != 2 {
-					log.Printf("Error in goroutine #%d: call does not have enough elements", i)
-					texts[i] = string(GenerateJSONResponse(json.RawMessage(`{"error":"Invalid input: expected 2 elements"}`)))
+					log.Printf("Error in Goroutine #%d: call does not have enough elements", i)
+					texts[i] = string(GenerateJSONResponse(&PromptRequest{
+						PromptOutput: json.RawMessage(`{"error":"Invalid input: expected 2 elements"}`),
+					}))
 
 					return
 				}
 
 				// Update the input from the call slice
-				input := OllamaRequest{
-					Prompt: fmt.Sprint(call[0]),
-					Model:  fmt.Sprint(call[1]),
-					// TODO: Implement streaming
-					Stream: false,
-				}
+				input := newPromptRequest()
+				input.PromptInput = fmt.Sprint(call[0])
+				input.Model = fmt.Sprint(call[1])
+				input.PromptOutput = textToText(ctx, &input)
 
-				// Send the request to Ollama and handle the response
-				output, err := SendOllamaRequest(ctx, input)
-				if err != nil {
-					log.Printf("Error in goroutine #%d generating text for input: %v", i, err)
-					texts[i] = string(GenerateJSONResponse(json.RawMessage(fmt.Sprintf(`{"error":"%s"}`, err.Error()))))
-
-					return
-				}
-
-				texts[i] = string(GenerateJSONResponse(output))
+				texts[i] = string(GenerateJSONResponse(input))
 			}(i, call)
 		}
 	}
@@ -71,6 +64,26 @@ func textsToTexts(ctx context.Context, bqReq *BigQueryRequest) *BigQueryResponse
 	return &BigQueryResponse{
 		Replies: texts,
 	}
+}
+
+// Generates content based on the provided input
+func textToText(ctx context.Context, input *PromptRequest) json.RawMessage {
+	// Create a new Ollama request
+	req := OllamaRequest{
+		Prompt: input.PromptInput,
+		Model:  input.Model,
+		// TODO: Implement streaming
+		Stream: false,
+	}
+
+	// Send the request to Ollama and handle the response
+	resp, err := sendOllamaRequest(ctx, req)
+	if err != nil {
+		log.Printf("Error generating text for input: %v", err)
+		return json.RawMessage(fmt.Sprintf(`{"error":"%s"}`, err.Error()))
+	}
+
+	return resp
 }
 
 // GenerateJSONResponse converts the input to JSON format

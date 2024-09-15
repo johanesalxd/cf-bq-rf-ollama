@@ -37,7 +37,7 @@ func SendSuccess(w http.ResponseWriter, bqResp *BigQueryResponse) {
 }
 
 // TODO: change from HTTP call to library (https://github.com/ollama/ollama/blob/main/examples/go-generate)
-func SendOllamaRequest(ctx context.Context, req OllamaRequest) (*OllamaResponse, error) {
+func sendOllamaRequest(ctx context.Context, req OllamaRequest) (json.RawMessage, error) {
 	jsonData, err := json.Marshal(req)
 	if err != nil {
 		return nil, fmt.Errorf("error marshaling request: %v", err)
@@ -61,13 +61,7 @@ func SendOllamaRequest(ctx context.Context, req OllamaRequest) (*OllamaResponse,
 		return nil, fmt.Errorf("error reading response: %v", err)
 	}
 
-	var ollamaResp OllamaResponse
-
-	if err := json.Unmarshal(body, &ollamaResp); err != nil {
-		return nil, fmt.Errorf("error unmarshaling response: %v", err)
-	}
-
-	return &ollamaResp, nil
+	return body, nil
 }
 
 func initAll() {

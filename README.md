@@ -36,8 +36,8 @@ curl -m 60 -X POST localhost:8080 \
   "userDefinedContext": {},
   "calls": [
     ["what is bigquery", "gemma2:9b"],
-    ["what is ollama", "gemma2:9b"],
-    ["what is gemma2", "gemma2:9b"]
+    ["no model found", ""],
+    ["error"]
   ]
 }'
 ```

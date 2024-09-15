@@ -1,17 +1,14 @@
 package bqrfollama_test
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"reflect"
 	"testing"
 
 	bqrfollama "github.com/johanesalxd/cf-bq-rf-ollama"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestSendError(t *testing.T) {
@@ -164,76 +161,6 @@ func TestSendSuccess(t *testing.T) {
 			// Verify that the error message in the response matches the input error message
 			if got.ErrorMessage != test.resp.ErrorMessage {
 				t.Errorf("SendSuccess(%v) ErrorMessage = %v, want %v", test.resp, got.ErrorMessage, test.resp.ErrorMessage)
-			}
-		})
-	}
-}
-
-func TestSendOllamaRequest(t *testing.T) {
-	tests := []struct {
-		name           string
-		model          string
-		prompt         string
-		serverResponse string
-		expectedError  bool
-	}{
-		{
-			name:           "Successful request",
-			model:          "test-model",
-			prompt:         "test prompt",
-			serverResponse: "mocked response",
-			expectedError:  false,
-		},
-		{
-			name:           "Server error",
-			model:          "test-model",
-			prompt:         "test prompt",
-			serverResponse: "Internal Server Error",
-			expectedError:  true,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			// Mock server
-			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				assert.Equal(t, "/api/generate", r.URL.Path)
-				assert.Equal(t, "application/json", r.Header.Get("Content-Type"))
-
-				var req bqrfollama.OllamaRequest
-				json.NewDecoder(r.Body).Decode(&req)
-				assert.Equal(t, tt.model, req.Model)
-				assert.Equal(t, tt.prompt, req.Prompt)
-
-				if tt.expectedError && tt.name == "Server error" {
-					w.WriteHeader(http.StatusInternalServerError)
-					w.Write([]byte(tt.serverResponse))
-				} else {
-					resp := bqrfollama.OllamaResponse{Response: tt.serverResponse}
-					json.NewEncoder(w).Encode(resp)
-				}
-			}))
-			defer server.Close()
-
-			// Set environment variable
-			os.Setenv("OLLAMA_URL", server.URL)
-			defer os.Unsetenv("OLLAMA_URL")
-
-			// Test
-			req := bqrfollama.OllamaRequest{
-				Model:  tt.model,
-				Prompt: tt.prompt,
-			}
-
-			resp, err := bqrfollama.SendOllamaRequest(context.Background(), req)
-
-			if tt.expectedError {
-				assert.Error(t, err)
-				assert.Nil(t, resp)
-			} else {
-				assert.NoError(t, err)
-				assert.NotNil(t, resp)
-				assert.Equal(t, tt.serverResponse, resp.Response)
 			}
 		})
 	}
