@@ -80,7 +80,8 @@ func textToText(ctx context.Context, input *PromptRequest) json.RawMessage {
 	resp, err := sendOllamaRequest(ctx, req)
 	if err != nil {
 		log.Printf("Error generating text for input: %v", err)
-		return json.RawMessage(fmt.Sprintf(`{"error":"%s"}`, err.Error()))
+		// Replace json.RawMessage to map to handle API error (unformatted error message)
+		return GenerateJSONResponse(map[string]string{"error": err.Error()})
 	}
 
 	return resp
