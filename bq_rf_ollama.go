@@ -19,7 +19,7 @@ func BQRFOllama(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Create a context with timeout
-	ctx, cancel := context.WithTimeout(r.Context(), 30*time.Second)
+	ctx, cancel := context.WithTimeout(r.Context(), time.Duration(contextTimeoutS)*time.Second)
 	defer func() {
 		cancel()
 		log.Printf("Done, Goroutines closed due to: %v", ctx.Err())

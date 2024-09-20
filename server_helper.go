@@ -14,9 +14,9 @@ import (
 )
 
 var (
-	initOnce         sync.Once
-	concurrencyLimit int
-	httpClient       *http.Client
+	initOnce                          sync.Once
+	concurrencyLimit, contextTimeoutS int
+	httpClient                        *http.Client
 )
 
 // SendError sends an error response with the given error message and HTTP status code
@@ -72,6 +72,13 @@ func initAll() {
 	if err != nil {
 		log.Printf("Failed to parse CONCURRENCY_LIMIT, using default value of 100: %v", err)
 		concurrencyLimit = 100
+	}
+
+	// Parse the context timeout from the environment variable
+	contextTimeoutS, err = strconv.Atoi(os.Getenv("CONTEXT_TIMEOUT_S"))
+	if err != nil {
+		log.Printf("Failed to parse CONTEXT_TIMEOUT_S, using default value of 30 seconds: %v", err)
+		contextTimeoutS = 30
 	}
 
 	// Initialize the HTTP client
