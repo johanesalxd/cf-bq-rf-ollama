@@ -76,15 +76,18 @@ func textToText(ctx context.Context, input *PromptRequest) json.RawMessage {
 		Stream: false,
 	}
 
-	// Send the request to Ollama and handle the response
-	resp, err := sendOllamaRequest(ctx, req)
-	if err != nil {
-		log.Printf("Error generating text for input: %v", err)
-		// Replace json.RawMessage to map to handle API error (unformatted error message)
-		return GenerateJSONResponse(map[string]string{"error": err.Error()})
+	if input.PromptInput == "" || input.Model == "" {
+		return json.RawMessage(`{"error":"Invalid input: PromptInput and Model are required"}`)
 	}
 
-	return resp
+	// Send the request to Ollama and handle the response
+	resp := sendOllamaRequest(ctx, req)
+	if resp.ErrorMessage != nil {
+		log.Printf("Error generating text for input: %v", resp.ErrorMessage)
+		return json.RawMessage(fmt.Sprintf(`{"error":"%s"}`, resp.ErrorMessage.Error()))
+	}
+
+	return resp.Response
 }
 
 // GenerateJSONResponse converts the input to JSON format

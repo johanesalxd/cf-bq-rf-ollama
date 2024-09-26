@@ -20,10 +20,15 @@ type OllamaRequest struct {
 	Options map[string]interface{} `json:"options,omitempty"`
 }
 
+type OllamaResponse struct {
+	Response     []byte `json:"response,omitempty"`
+	ErrorMessage error  `json:"error,omitempty"`
+}
+
 func newPromptRequest() PromptRequest {
 	return PromptRequest{
 		PromptInput:  "",
 		Model:        "",
-		PromptOutput: json.RawMessage(""),
+		PromptOutput: nil,
 	}
 }

@@ -37,31 +37,42 @@ func SendSuccess(w http.ResponseWriter, bqResp *BigQueryResponse) {
 }
 
 // TODO: change from HTTP call to library (https://github.com/ollama/ollama/blob/main/examples/go-generate)
-func sendOllamaRequest(ctx context.Context, req OllamaRequest) (json.RawMessage, error) {
+func sendOllamaRequest(ctx context.Context, req OllamaRequest) OllamaResponse {
+	// Marshal the request into JSON
 	jsonData, err := json.Marshal(req)
 	if err != nil {
-		return nil, fmt.Errorf("error marshaling request: %v", err)
+		return OllamaResponse{ErrorMessage: fmt.Errorf("error marshaling request: %v", err)}
 	}
 
+	// Construct the URL for the Ollama API
 	url := fmt.Sprintf("%s/api/generate", os.Getenv("OLLAMA_URL"))
 	httpReq, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewBuffer(jsonData))
 	if err != nil {
-		return nil, fmt.Errorf("error creating request: %v", err)
+		return OllamaResponse{ErrorMessage: fmt.Errorf("error creating request: %v", err)}
 	}
 	httpReq.Header.Set("Content-Type", "application/json")
 
+	// Send the HTTP request
 	resp, err := httpClient.Do(httpReq)
 	if err != nil {
-		return nil, fmt.Errorf("error making request: %v", err)
+		return OllamaResponse{ErrorMessage: fmt.Errorf("error making request: %+v", err)}
 	}
 	defer resp.Body.Close()
 
+	// Read the response body
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, fmt.Errorf("error reading response: %v", err)
+		return OllamaResponse{ErrorMessage: fmt.Errorf("error reading response: %v", err)}
 	}
 
-	return body, nil
+	// Check if the body is valid JSON
+	var jsonCheck interface{}
+	if err := json.Unmarshal(body, &jsonCheck); err != nil {
+		// If it's not valid JSON, return an error
+		return OllamaResponse{ErrorMessage: fmt.Errorf("invalid JSON response: %v", err)}
+	}
+
+	return OllamaResponse{Response: body}
 }
 
 func initAll() {
